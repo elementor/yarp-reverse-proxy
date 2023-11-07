@@ -37,14 +37,14 @@ internal sealed class V1IngressResourceStatusUpdater : IIngressResourceStatusUpd
         var service = await _client.CoreV1.ReadNamespacedServiceStatusAsync(_options.ControllerServiceName, _options.ControllerServiceNamespace, cancellationToken: cancellationToken);
         if (service.Status?.LoadBalancer?.Ingress is { } loadBalancerIngresses)
         {
-            if (!_cache.IsYarpIngress(ingress))
-            {
-                continue;
-            }
             var status = new V1IngressStatus(new V1LoadBalancerStatus(loadBalancerIngresses));
             var ingresses = _cache.GetIngresses().ToArray();
             foreach (var ingress in ingresses)
             {
+                if (!_cache.IsYarpIngress(ingress))
+                {
+                    continue;
+                }
                 _logger.LogInformation("Updating ingress {IngressClassNamespace}/{IngressClassName} status.", ingress.Metadata.NamespaceProperty, ingress.Metadata.Name);
                 var ingressStatus = await _client.NetworkingV1.ReadNamespacedIngressStatusAsync(ingress.Metadata.Name, ingress.Metadata.NamespaceProperty, cancellationToken: cancellationToken);
                 ingressStatus.Status = status;
